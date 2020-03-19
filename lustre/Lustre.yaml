@@ -1,0 +1,2290 @@
+AWSTemplateFormatVersion: 2010-09-09
+Conditions:
+  RegionIsGovCloud: !Equals 
+    - !Ref 'AWS::Region'
+    - us-gov-west-1
+  UseCloudWatchLogs: !Equals 
+    - !Ref EnableCloudWatchLogs
+    - 'true'
+  UseIPSec: !Equals 
+    - !Ref EnableIPSec
+    - 'true'
+  UsePlacementGroup: !Not 
+    - !Equals 
+      - !Ref PlacementGroupName
+      - ''
+Description: >-
+  Create a highly available Lustre cluster in a VPC using C4 class instances and
+  GP2 EBS volumes. **WARNING** This template creates multiple Amazon EC2
+  instances and related resources. You will be billed for the AWS resources used
+  if you create a stack from this template.
+Mappings:
+  AWSInstanceType2Arch:
+    c4.2xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    c4.4xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    c4.8xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    c4.large:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    c4.xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    c5.12xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    c5.18xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    c5.24xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    c5.2xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    c5.4xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    c5.9xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    c5.large:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    c5.xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    c5d.18xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    c5d.2xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    c5d.4xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    c5d.9xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    c5d.large:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    c5d.xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    c5n.18xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    c5n.2xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    c5n.4xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    c5n.9xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    c5n.large:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    c5n.xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    f1.16xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    f1.2xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    f1.4xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    h1.16xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    h1.2xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    h1.4xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    h1.8xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    m5.12xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    m5.16xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    m5.24xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    m5.2xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    m5.4xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    m5.8xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    m5a.12xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    m5a.16xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    m5a.24xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    m5a.2xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    m5a.4xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    m5a.8xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    m5a.large:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    m5ad.12xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    m5ad.24xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    m5ad.2xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    m5ad.4xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    m5d.12xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    m5d.16xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    m5d.24xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    m5d.2xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    m5d.4xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    m5d.8xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    p3.16xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    p3.2xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    p3.8xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    r5.12xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    r5.16xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    r5.24xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    r5.2xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    r5.4xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    r5.8xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    r5.large:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    r5.xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    r5a.12xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    r5a.16xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    r5a.24xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    r5a.2xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    r5a.4xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    r5a.8xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    r5a.large:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    r5a.xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    r5ad.12xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    r5ad.24xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    r5ad.2xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    r5ad.4xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    r5ad.large:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    r5ad.xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    t2.2xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'false'
+    t2.large:
+      Arch: 64HVM
+      EbsOptimized: 'false'
+    t2.medium:
+      Arch: 64HVM
+      EbsOptimized: 'false'
+    t2.micro:
+      Arch: 64HVM
+      EbsOptimized: 'false'
+    t2.small:
+      Arch: 64HVM
+      EbsOptimized: 'false'
+    t2.xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'false'
+    x1e.16xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    x1e.2xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    x1e.32xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    x1e.4xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    x1e.8xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    x1e.xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'true'
+    z1d.12xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'false'
+    z1d.2xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'false'
+    z1d.3xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'false'
+    z1d.6xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'false'
+    z1d.large:
+      Arch: 64HVM
+      EbsOptimized: 'false'
+    z1d.xlarge:
+      Arch: 64HVM
+      EbsOptimized: 'false'
+  AWSNATAMI:
+    ap-east-1:
+      AMI: ami-0c6ed192398e5636d
+    ap-northeast-1:
+      AMI: ami-0cf78ae724f63bac0
+    ap-northeast-2:
+      AMI: ami-08cfa02141f9e9bee
+    ap-south-1:
+      AMI: ami-0aba92643213491b9
+    ap-southeast-1:
+      AMI: ami-0cf24653bcf894797
+    ap-southeast-2:
+      AMI: ami-00c1445796bc0a29f
+    ca-central-1:
+      AMI: ami-b61b96d2
+    eu-central-1:
+      AMI: ami-06465d49ba60cf770
+    eu-north-1:
+      AMI: ami-d6bd31a8
+    eu-west-1:
+      AMI: ami-0ea87e2bfa81ca08a
+    eu-west-2:
+      AMI: ami-e6768381
+    eu-west-3:
+      AMI: ami-0050bb60cea70c5b3
+    me-south-1:
+      AMI: ami-0e9909371b18e2ec7
+    sa-east-1:
+      AMI: ami-09c013530239687aa
+    us-east-1:
+      AMI: ami-0422d936d535c63b1
+    us-east-2:
+      AMI: ami-0f9c61b5a562a16af
+    us-west-1:
+      AMI: ami-0d4027d2cdbca669d
+    us-west-2:
+      AMI: ami-0b840e8a1ce4cdf15
+  AWSRegionArch2ServerAMI:
+    ap-east-1:
+      '64': NA
+      64HVM: ami-ccd3a8bd
+    ap-northeast-1:
+      '64': NA
+      64HVM: ami-090c4edbd153bdc30
+    ap-northeast-2:
+      '64': NA
+      64HVM: ami-0bc7d1ec362a95946
+    ap-south-1:
+      '64': NA
+      64HVM: ami-0351e3ef912ce5f28
+    ap-southeast-1:
+      '64': NA
+      64HVM: ami-00a1da230cabd960a
+    ap-southeast-2:
+      '64': NA
+      64HVM: ami-0b84e078a8c256362
+    ca-central-1:
+      '64': NA
+      64HVM: ami-0dbdfc11dc754c999
+    eu-central-1:
+      '64': NA
+      64HVM: ami-09f2d24d955f88458
+    eu-north-1:
+      '64': NA
+      64HVM: ami-7b36bd05
+    eu-west-1:
+      '64': NA
+      64HVM: ami-003b0e811522d2a72
+    eu-west-2:
+      '64': NA
+      64HVM: ami-0b36846bbdc323d3b
+    eu-west-3:
+      '64': NA
+      64HVM: ami-05912ea1e9b8a261f
+    me-south-1:
+      '64': NA
+      64HVM: ami-057bb9a2ff05f53a2
+    sa-east-1:
+      '64': NA
+      64HVM: ami-0aae8cb0403394325
+    us-east-1:
+      '64': NA
+      64HVM: ami-03342f1c2dc946e88
+    us-east-2:
+      '64': NA
+      64HVM: ami-047af99b6a81739c4
+    us-west-1:
+      '64': NA
+      64HVM: ami-0068ef68fc9771f9e
+    us-west-2:
+      '64': NA
+      64HVM: ami-07480702b48d28334
+Metadata:
+  'AWS::CloudFormation::Interface':
+    ParameterGroups:
+      - Label:
+          default: 'Network Configuration '
+        Parameters:
+          - FsName
+          - VpcId
+          - VpcPrivateCIDR
+          - VpcPublicSubnetId
+          - WebServerPort
+          - AccessFrom
+          - HTTPFrom
+          - SSHFrom
+          - KeyName
+      - Label:
+          default: Global Options
+        Parameters:
+          - EnableCloudWatchLogs
+          - EnableEBSEncryption
+          - EnableIPSec
+          - ImportBucket
+          - ImportDest
+          - ImportPrefix
+    ParameterLabels:
+      VpcId:
+        default: Which VPC should this be deployed to?
+  'AWS::CloudFormation::Designer':
+    46a85815-858d-4b33-a42a-e816003ea097:
+      size:
+        width: 60
+        height: 60
+      position:
+        x: 580
+        'y': 960
+      z: 1
+      embeds: []
+      isassociatedwith:
+        - ab11b5fc-f3f0-45d0-b631-ee6f6485273d
+      dependson:
+        - 3e00d64c-dc22-422f-a476-92edb2d581ca
+        - 193d7056-8025-4f18-bfb8-b8fd1a6c1686
+Outputs:
+  ClientInstanceProfile:
+    Description: Instance profile provided for automated client setup
+    Value: !Ref ClientInstanceProfile
+  Dashboard:
+    Description: Monitoring interface for the Lustre servers.
+    Value: !Join 
+      - ''
+      - - 'http://'
+        - !GetAtt 
+          - ElasticLoadBalancer
+          - DNSName
+  Gateway:
+    Description: 'Public IP of NAT gateway, use for SSH access'
+    Value: !GetAtt 
+      - NATDevice
+      - PublicIp
+Parameters:
+  AccessFrom:
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: must be a valid CIDR range of the form x.x.x.x/x.
+    Default: 0.0.0.0/0
+    Description: Lockdown access to Lustre services (default is accessiable for 0.0.0.0/0)
+    MaxLength: '18'
+    MinLength: '9'
+    Type: String
+  EnableCloudWatchLogs:
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Default: 'false'
+    Description: Enable forwarding of cluster logs to CloudWatch.
+    Type: String
+  EnableIPSec:
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Default: 'false'
+    Description: Enable encryption of Lustre traffic over the wire.
+    Type: String
+  EnableOstRaid0:
+    AllowedValues:
+      - 'true'
+      - 'false'
+    Default: 'false'
+    Description: >-
+      Configures how storage is used by the lustre target. If true, then a RAID0
+      volume is created with all of the OstVolumes. Otherwise, one OST is
+      created for each EBS volume.
+    Type: String
+  FsName:
+    AllowedPattern: '[\w\-]{1,8}'
+    ConstraintDescription: Must be 1-8 printable characters.
+    Default: scratch
+    Description: Name of the lustre filesystem.
+    MaxLength: '8'
+    MinLength: '1'
+    Type: String
+  HTTPFrom:
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: must be a valid CIDR range of the form x.x.x.x/x.
+    Default: 0.0.0.0/0
+    Description: >-
+      Lockdown access to Lustre Ganglia on MGS (default is accessiable for
+      0.0.0.0/0)
+    MaxLength: '18'
+    MinLength: '9'
+    Type: String
+  ImportBucket:
+    Default: ''
+    Description: '[Optional] Bucket to import data from.'
+    Type: String
+  ImportDest:
+    Default: ''
+    Description: >-
+      [Optional] Subdirectory in Lustre filesystem to import data into. Will
+      default to ImportPrefix, if specified. 
+    Type: String
+  ImportPrefix:
+    Default: ''
+    Description: >-
+      [Optional] Import all keys below prefix in ImportBucket. If unspecified,
+      all keys in ImportBucket will be imported.
+    Type: String
+  KeyName:
+    ConstraintDescription: must be set to a valid key.
+    Description: Name of and existing EC2 KeyPair to enable SSH access to the instance
+    MinLength: '1'
+    Type: 'AWS::EC2::KeyPair::KeyName'
+  MdsInstanceType:
+    AllowedValues:
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - t2.large
+      - t2.xlarge
+      - t2.2xlarge
+      - m5.2xlarge
+      - m5.4xlarge
+      - m5.8xlarge
+      - m5.12xlarge
+      - m5.16xlarge
+      - m5.24xlarge
+      - m5a.large
+      - m5a.2xlarge
+      - m5a.4xlarge
+      - m5a.8xlarge
+      - m5a.12xlarge
+      - m5a.16xlarge
+      - m5a.24xlarge
+      - m5ad.2xlarge
+      - m5ad.4xlarge
+      - m5ad.12xlarge
+      - m5ad.24xlarge
+      - m5d.2xlarge
+      - m5d.4xlarge
+      - m5d.8xlarge
+      - m5d.12xlarge
+      - m5d.16xlarge
+      - m5d.24xlarge
+      - c4.large
+      - c4.xlarge
+      - c4.2xlarge
+      - c4.4xlarge
+      - c4.8xlarge
+      - c5.large
+      - c5.xlarge
+      - c5.2xlarge
+      - c5.4xlarge
+      - c5.9xlarge
+      - c5.12xlarge
+      - c5.18xlarge
+      - c5.24xlarge
+      - c5d.large
+      - c5d.xlarge
+      - c5d.2xlarge
+      - c5d.4xlarge
+      - c5d.9xlarge
+      - c5n.large
+      - c5n.xlarge
+      - c5n.2xlarge
+      - c5n.4xlarge
+      - c5n.9xlarge
+      - c5n.18xlarge
+      - x1e.xlarge
+      - x1e.2xlarge
+      - x1e.4xlarge
+      - x1e.8xlarge
+      - x1e.16xlarge
+      - x1e.32xlarge
+      - r5.large
+      - r5.xlarge
+      - r5.2xlarge
+      - r5.4xlarge
+      - r5.8xlarge
+      - r5.12xlarge
+      - r5.16xlarge
+      - r5.24xlarge
+      - r5a.large
+      - r5a.xlarge
+      - r5a.2xlarge
+      - r5a.4xlarge
+      - r5a.8xlarge
+      - r5a.12xlarge
+      - r5a.16xlarge
+      - r5ad.large
+      - r5ad.xlarge
+      - r5ad.2xlarge
+      - r5ad.4xlarge
+      - r5ad.12xlarge
+      - r5ad.24xlarge
+      - p3.2xlarge
+      - p3.8xlarge
+      - p3.16xlarge
+      - f1.2xlarge
+      - f1.4xlarge
+      - f1.16xlarge
+      - h1.2xlarge
+      - h1.4xlarge
+      - h1.8xlarge
+      - h1.16xlarge
+      - z1d.large
+      - z1d.xlarge
+      - z1d.2xlarge
+      - z1d.3xlarge
+      - z1d.6xlarge
+      - z1d.12xlarge
+    Default: c4.2xlarge
+    Description: Instance type used for Lustre servers
+    Type: String
+  NATInstanceType:
+    AllowedValues:
+      - m5a.large
+      - m5a.xlarge
+      - m5a.2xlarge
+      - c4.8xlarge
+    ConstraintDescription: must be a valid EC2 instance type.
+    Default: m5a.large
+    Description: NAT Device EC2 instance type
+    Type: String
+  OssCount:
+    Default: '4'
+    Description: Number of OSS instances.
+    Type: Number
+  OssInstanceType:
+    AllowedValues:
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - t2.large
+      - t2.xlarge
+      - t2.2xlarge
+      - m5.2xlarge
+      - m5.4xlarge
+      - m5.8xlarge
+      - m5.12xlarge
+      - m5.16xlarge
+      - m5.24xlarge
+      - m5a.large
+      - m5a.2xlarge
+      - m5a.4xlarge
+      - m5a.8xlarge
+      - m5a.12xlarge
+      - m5a.16xlarge
+      - m5a.24xlarge
+      - m5ad.2xlarge
+      - m5ad.4xlarge
+      - m5ad.12xlarge
+      - m5ad.24xlarge
+      - m5d.2xlarge
+      - m5d.4xlarge
+      - m5d.8xlarge
+      - m5d.12xlarge
+      - m5d.16xlarge
+      - m5d.24xlarge
+      - c4.large
+      - c4.xlarge
+      - c4.2xlarge
+      - c4.4xlarge
+      - c4.8xlarge
+      - c5.large
+      - c5.xlarge
+      - c5.2xlarge
+      - c5.4xlarge
+      - c5.9xlarge
+      - c5.12xlarge
+      - c5.18xlarge
+      - c5.24xlarge
+      - c5d.large
+      - c5d.xlarge
+      - c5d.2xlarge
+      - c5d.4xlarge
+      - c5d.9xlarge
+      - c5n.large
+      - c5n.xlarge
+      - c5n.2xlarge
+      - c5n.4xlarge
+      - c5n.9xlarge
+      - c5n.18xlarge
+      - x1e.xlarge
+      - x1e.2xlarge
+      - x1e.4xlarge
+      - x1e.8xlarge
+      - x1e.16xlarge
+      - x1e.32xlarge
+      - r5.large
+      - r5.xlarge
+      - r5.2xlarge
+      - r5.4xlarge
+      - r5.8xlarge
+      - r5.12xlarge
+      - r5.16xlarge
+      - r5.24xlarge
+      - r5a.large
+      - r5a.xlarge
+      - r5a.2xlarge
+      - r5a.4xlarge
+      - r5a.8xlarge
+      - r5a.12xlarge
+      - r5a.16xlarge
+      - r5ad.large
+      - r5ad.xlarge
+      - r5ad.2xlarge
+      - r5ad.4xlarge
+      - r5ad.12xlarge
+      - r5ad.24xlarge
+      - p3.2xlarge
+      - p3.8xlarge
+      - p3.16xlarge
+      - f1.2xlarge
+      - f1.4xlarge
+      - f1.16xlarge
+      - h1.2xlarge
+      - h1.4xlarge
+      - h1.8xlarge
+      - h1.16xlarge
+      - z1d.large
+      - z1d.xlarge
+      - z1d.2xlarge
+      - z1d.3xlarge
+      - z1d.6xlarge
+      - z1d.12xlarge
+    Default: c4.8xlarge
+    Description: Instance type used for Lustre OSS servers
+    Type: String
+  OstVolumeCount:
+    Default: '4'
+    Description: Number of EBS volumes to create for each OST.
+    Type: Number
+  OstVolumeSize:
+    Default: '100'
+    Description: Size of EBS volumes to use for OSTs.
+    Type: Number
+  PlacementGroupName:
+    AllowedPattern: '[\x20-\x7E]*'
+    ConstraintDescription: can contain only ASCII characters.
+    Default: ''
+    Description: 'Name of Placement Group to use (optional, leave blank if not required)'
+    MaxLength: '32'
+    MinLength: '0'
+    Type: String
+  SSHFrom:
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: must be a valid CIDR range of the form x.x.x.x/x.
+    Description: >-
+      Lockdown SSH access to the NAT host (default can be accessed from
+      anywhere)
+    MaxLength: '18'
+    MinLength: '9'
+    Type: String
+  VpcId:
+    AllowedPattern: 'vpc-[a-z0-9]*'
+    ConstraintDescription: 'can contain only alphanumeric characters, spaces, dashes and underscores.'
+    Default: vpc-
+    Description: Id of an exisiting VPC that contains a public subnet i.e. vpc-d54ebebf
+    MaxLength: '64'
+    MinLength: '1'
+    Type: 'AWS::EC2::VPC::Id'
+  VpcPrivateCIDR:
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})/(\d{1,2})'
+    ConstraintDescription: must be a valid CIDR range of the form x.x.x.x/x.
+    Default: 10.0.2.0/24
+    Description: CIDR for new private subnet i.e. 10.0.2.0/24
+    MaxLength: '18'
+    MinLength: '9'
+    Type: String
+  VpcPublicSubnetId:
+    AllowedPattern: 'subnet-[a-z0-9]*'
+    ConstraintDescription: 'can contain only alphanumeric characters, spaces, dashes and underscores.'
+    Default: subnet-
+    Description: Id of an exisiting public VPC subnet i.e. subnet-ae4ebec4
+    Type: 'AWS::EC2::Subnet::Id'
+  WorkerCount:
+    Default: '2'
+    Description: Number of Worker instances.
+    Type: Number
+  WorkerInstanceType:
+    AllowedValues:
+      - t2.micro
+      - t2.small
+      - t2.medium
+      - t2.large
+      - t2.xlarge
+      - t2.2xlarge
+      - m5.2xlarge
+      - m5.4xlarge
+      - m5.8xlarge
+      - m5.12xlarge
+      - m5.16xlarge
+      - m5.24xlarge
+      - m5a.large
+      - m5a.2xlarge
+      - m5a.4xlarge
+      - m5a.8xlarge
+      - m5a.12xlarge
+      - m5a.16xlarge
+      - m5a.24xlarge
+      - m5ad.2xlarge
+      - m5ad.4xlarge
+      - m5ad.12xlarge
+      - m5ad.24xlarge
+      - m5d.2xlarge
+      - m5d.4xlarge
+      - m5d.8xlarge
+      - m5d.12xlarge
+      - m5d.16xlarge
+      - m5d.24xlarge
+      - c4.large
+      - c4.xlarge
+      - c4.2xlarge
+      - c4.4xlarge
+      - c4.8xlarge
+      - c5.large
+      - c5.xlarge
+      - c5.2xlarge
+      - c5.4xlarge
+      - c5.9xlarge
+      - c5.12xlarge
+      - c5.18xlarge
+      - c5.24xlarge
+      - c5d.large
+      - c5d.xlarge
+      - c5d.2xlarge
+      - c5d.4xlarge
+      - c5d.9xlarge
+      - c5n.large
+      - c5n.xlarge
+      - c5n.2xlarge
+      - c5n.4xlarge
+      - c5n.9xlarge
+      - c5n.18xlarge
+      - x1e.xlarge
+      - x1e.2xlarge
+      - x1e.4xlarge
+      - x1e.8xlarge
+      - x1e.16xlarge
+      - x1e.32xlarge
+      - r5.large
+      - r5.xlarge
+      - r5.2xlarge
+      - r5.4xlarge
+      - r5.8xlarge
+      - r5.12xlarge
+      - r5.16xlarge
+      - r5.24xlarge
+      - r5a.large
+      - r5a.xlarge
+      - r5a.2xlarge
+      - r5a.4xlarge
+      - r5a.8xlarge
+      - r5a.12xlarge
+      - r5a.16xlarge
+      - r5ad.large
+      - r5ad.xlarge
+      - r5ad.2xlarge
+      - r5ad.4xlarge
+      - r5ad.12xlarge
+      - r5ad.24xlarge
+      - p3.2xlarge
+      - p3.8xlarge
+      - p3.16xlarge
+      - f1.2xlarge
+      - f1.4xlarge
+      - f1.16xlarge
+      - h1.2xlarge
+      - h1.4xlarge
+      - h1.8xlarge
+      - h1.16xlarge
+      - z1d.large
+      - z1d.xlarge
+      - z1d.2xlarge
+      - z1d.3xlarge
+      - z1d.6xlarge
+      - z1d.12xlarge
+    Default: c4.large
+    Description: Instance type used for Worker instances
+    Type: String
+Resources:
+  BasePolicy:
+    Properties:
+      PolicyDocument:
+        Statement:
+          - !If 
+            - UseCloudWatchLogs
+            - Action:
+                - 'logs:CreateLogGroup'
+                - 'logs:CreateLogStream'
+                - 'logs:PutLogEvents'
+                - 'logs:DescribeLogStreams'
+              Effect: Allow
+              Resource:
+                - 'arn:aws:logs:*:*:*'
+            - !Ref 'AWS::NoValue'
+          - Action:
+              - 'EC2:DescribeInstances'
+              - 'EC2:DescribeInstanceStatus'
+              - 'EC2:DescribeNetworkInterfaces'
+              - 'EC2:DescribeNetworkInterfaceAttribute'
+              - 'EC2:CreateTags'
+              - 'CloudFormation:*'
+              - 'dynamodb:*'
+            Effect: Allow
+            Resource: '*'
+      PolicyName: BasePolicy
+      Roles:
+        - !Ref ServerRole
+        - !Ref WorkerRole
+    Type: 'AWS::IAM::Policy'
+  ClientInstanceProfile:
+    Properties:
+      Path: /
+      Roles:
+        - !Ref ClientSetupRole
+    Type: 'AWS::IAM::InstanceProfile'
+  ClientSetupPolicy:
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - 'dynamodb:ListTables'
+            Effect: Allow
+            Resource: '*'
+          - Action:
+              - 'dynamodb:GetItem'
+              - 'dynamodb:Scan'
+              - 'dynamodb:BatchGetItem'
+            Effect: Allow
+            Resource: !Join 
+              - ''
+              - - 'arn:aws:dynamodb:'
+                - !Ref 'AWS::Region'
+                - ':'
+                - !Ref 'AWS::AccountId'
+                - ':table/'
+                - !Ref FilesystemTable
+      PolicyName: ClientSetupPolicy
+      Roles:
+        - !Ref ClientSetupRole
+    Type: 'AWS::IAM::Policy'
+  ClientSetupRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - 'sts:AssumeRole'
+            Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+      Path: /
+    Type: 'AWS::IAM::Role'
+  ELBSecurityGroup:
+    Properties:
+      GroupDescription: External access to MGS
+      SecurityGroupEgress:
+        - DestinationSecurityGroupId: !Ref LustreSecurityGroup
+          FromPort: '80'
+          IpProtocol: tcp
+          ToPort: '80'
+      SecurityGroupIngress:
+        - CidrIp: !Ref AccessFrom
+          FromPort: '80'
+          IpProtocol: tcp
+          ToPort: '80'
+        - CidrIp: !Ref HTTPFrom
+          FromPort: '80'
+          IpProtocol: tcp
+          ToPort: '80'
+        - CidrIp: !Ref SSHFrom
+          FromPort: '22'
+          IpProtocol: tcp
+          ToPort: '22'
+      VpcId: !Ref VpcId
+    Type: 'AWS::EC2::SecurityGroup'
+  ElasticLoadBalancer:
+    Properties:
+      HealthCheck:
+        HealthyThreshold: '2'
+        Interval: '30'
+        Target: !Join 
+          - ''
+          - - 'TCP:'
+            - '80'
+        Timeout: '5'
+        UnhealthyThreshold: '10'
+      Listeners:
+        - InstancePort: '80'
+          LoadBalancerPort: '80'
+          Protocol: TCP
+      SecurityGroups:
+        - !Ref ELBSecurityGroup
+      Subnets:
+        - !Ref VpcPublicSubnetId
+    Type: 'AWS::ElasticLoadBalancing::LoadBalancer'
+  FilesystemTable:
+    Properties:
+      KeySchema:
+        HashKeyElement:
+          AttributeName: id
+          AttributeType: S
+      ProvisionedThroughput:
+        ReadCapacityUnits: '10'
+        WriteCapacityUnits: '5'
+    Type: 'AWS::DynamoDB::Table'
+  HaLustreResources:
+    DependsOn:
+      - MGSWaitCondition
+      - MGSNodes
+      - HaResourceQueue
+      - HaResourceTopic
+      - HaResourceQueuePolicy
+    Properties:
+      ServiceToken: !Ref HaResourceTopic
+    Type: 'Custom::HaLustreResources'
+    Version: '0.1'
+  HaResourceQueue:
+    Properties:
+      ReceiveMessageWaitTimeSeconds: '20'
+      VisibilityTimeout: '30'
+    Type: 'AWS::SQS::Queue'
+  HaResourceQueuePolicy:
+    Properties:
+      PolicyDocument:
+        Id: !Join 
+          - /
+          - - !GetAtt 
+              - HaResourceQueue
+              - Arn
+            - HaResourceQueuePolicy
+        Statement:
+          - Action: 'SQS:SendMessage'
+            Condition:
+              ArnEquals:
+                'aws:SourceArn': !Ref HaResourceTopic
+            Effect: Allow
+            Principal:
+              AWS: '*'
+            Resource: !GetAtt 
+              - HaResourceQueue
+              - Arn
+            Sid: AllowTopicToPublishMessages
+        Version: 2008-10-17
+      Queues:
+        - !Ref HaResourceQueue
+    Type: 'AWS::SQS::QueuePolicy'
+  HaResourceTopic:
+    Properties:
+      Subscription:
+        - Endpoint: !GetAtt 
+            - HaResourceQueue
+            - Arn
+          Protocol: sqs
+    Type: 'AWS::SNS::Topic'
+  InboundPrivateNetworkAclEntry:
+    DependsOn: PrivateNetworkAcl
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: 'false'
+      NetworkAclId: !Ref PrivateNetworkAcl
+      PortRange:
+        From: '0'
+        To: '65535'
+      Protocol: '-1'
+      RuleAction: allow
+      RuleNumber: '100'
+    Type: 'AWS::EC2::NetworkAclEntry'
+  LustreInternalSecurityGroupIngress:
+    Properties:
+      FromPort: '0'
+      GroupId: !Ref LustreSecurityGroup
+      IpProtocol: '-1'
+      SourceSecurityGroupId: !Ref LustreSecurityGroup
+      ToPort: '65535'
+    Type: 'AWS::EC2::SecurityGroupIngress'
+  LustreSecurityGroup:
+    Properties:
+      GroupDescription: Subnet access to Lustre servers
+      SecurityGroupIngress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: '22'
+          IpProtocol: tcp
+          ToPort: '22'
+        - !If 
+          - UseIPSec
+          - CidrIp: 0.0.0.0/0
+            FromPort: '500'
+            IpProtocol: udp
+            ToPort: '500'
+          - CidrIp: 0.0.0.0/0
+            FromPort: '988'
+            IpProtocol: tcp
+            ToPort: '988'
+        - !If 
+          - UseIPSec
+          - CidrIp: 0.0.0.0/0
+            FromPort: '-1'
+            IpProtocol: '50'
+            ToPort: '-1'
+          - !Ref 'AWS::NoValue'
+        - CidrIp: 0.0.0.0/0
+          FromPort: '80'
+          IpProtocol: tcp
+          ToPort: '80'
+        - CidrIp: !Ref SSHFrom
+          FromPort: '22'
+          IpProtocol: tcp
+          ToPort: '22'
+      VpcId: !Ref VpcId
+    Type: 'AWS::EC2::SecurityGroup'
+  MDSLaunchConfig:
+    DependsOn:
+      - ServerPolicy
+    Metadata:
+      'AWS::CloudFormation::Init':
+        config:
+          commands:
+            01_loci_init:
+              command: loci init
+          files:
+            /etc/loci.conf:
+              content: !Join 
+                - ''
+                - - |
+                    [default]
+                  - 'Version: '
+                  - 1.7.0
+                  - |+
+
+                  - 'FsName:'
+                  - !Ref FsName
+                  - |+
+
+                  - 'FilesystemTable:'
+                  - !Ref FilesystemTable
+                  - |+
+
+                  - 'HaEnabled: '
+                  - 'true'
+                  - |+
+
+                  - 'ImportBucket:'
+                  - !Ref ImportBucket
+                  - |+
+
+                  - 'ImportPrefix:'
+                  - !Ref ImportPrefix
+                  - |+
+
+                  - 'ImportDest:'
+                  - !Ref ImportDest
+                  - |+
+
+                  - 'LogDir: '
+                  - /var/log
+                  - |+
+
+                  - 'EnableCloudWatchLogs:'
+                  - !Ref EnableCloudWatchLogs
+                  - |+
+
+                  - 'EnableEBSEncryption:'
+                  - 'true'
+                  - |+
+
+                  - 'EnableIPSec:'
+                  - !Ref EnableIPSec
+                  - |+
+
+                  - 'RolesTable:'
+                  - !Ref RolesTable
+                  - |+
+
+                  - 'MdsCount:'
+                  - '1'
+                  - |+
+
+                  - 'OssCount:'
+                  - !Ref OssCount
+                  - |+
+
+                  - 'MdtVolumeCount:'
+                  - '4'
+                  - |+
+
+                  - 'OstVolumeCount:'
+                  - !Ref OstVolumeCount
+                  - |+
+
+                  - 'GangliaVolumeType: '
+                  - gp2
+                  - |+
+
+                  - 'GangliaVolumePiops: '
+                  - 0
+                  - |+
+
+                  - 'MgtVolumePiops: '
+                  - 0
+                  - |+
+
+                  - 'MgtVolumeType: '
+                  - gp2
+                  - |+
+
+                  - 'GangliaVolumeSize:'
+                  - '16'
+                  - |+
+
+                  - 'MgtVolumeSize:'
+                  - '5'
+                  - |+
+
+                  - 'EnableMdtRaid0:'
+                  - 'true'
+                  - |+
+
+                  - 'MdtVolumeSize:'
+                  - '40'
+                  - |+
+
+                  - 'MdtVolumeType: '
+                  - gp2
+                  - |+
+
+                  - 'MdtVolumePiops: '
+                  - 0
+                  - |+
+
+                  - 'EnableOstRaid0:'
+                  - !Ref EnableOstRaid0
+                  - |+
+
+                  - 'OstVolumeSize:'
+                  - !Ref OstVolumeSize
+                  - |+
+
+                  - 'OstVolumeType: '
+                  - gp2
+                  - |+
+
+                  - 'OstVolumePiops: '
+                  - 0
+                  - |+
+
+              group: root
+              mode: '00644'
+              user: root
+            /var/awslogs/etc/aws.conf:
+              content: !Join 
+                - ''
+                - - |
+                    [plugins]
+                  - |
+                    cwlogs = cwlogs
+                  - |
+                    [default]
+                  - 'region = '
+                  - !Ref 'AWS::Region'
+                  - |+
+
+              group: root
+              mode: '0600'
+              user: root
+    Properties:
+      EbsOptimized: !FindInMap 
+        - AWSInstanceType2Arch
+        - !Ref MdsInstanceType
+        - EbsOptimized
+      IamInstanceProfile: !Ref ServerInstanceProfile
+      ImageId: !FindInMap 
+        - AWSRegionArch2ServerAMI
+        - !Ref 'AWS::Region'
+        - !FindInMap 
+          - AWSInstanceType2Arch
+          - !Ref MdsInstanceType
+          - Arch
+      InstanceMonitoring: 'false'
+      InstanceType: !Ref MdsInstanceType
+      KeyName: !Ref KeyName
+      SecurityGroups:
+        - !Ref LustreSecurityGroup
+      UserData: !Base64 
+        'Fn::Join':
+          - ''
+          - - |
+              #!/bin/bash -x
+            - 'cfn-init -s '
+            - !Ref 'AWS::StackName'
+            - ' -r MDSLaunchConfig '
+            - '   --region '
+            - !Ref 'AWS::Region'
+            - |+
+
+            - cfn-signal -e $? -r 'MDS cfn-init failed' '
+            - !Ref MDSWaitHandle
+            - |
+              ' || true
+    Type: 'AWS::AutoScaling::LaunchConfiguration'
+  MDSNodes:
+    Properties:
+      AvailabilityZones:
+        - !GetAtt 
+          - PrivateSubnet
+          - AvailabilityZone
+      DesiredCapacity: '1'
+      LaunchConfigurationName: !Ref MDSLaunchConfig
+      MaxSize: '1'
+      MinSize: '1'
+      PlacementGroup: !If 
+        - UsePlacementGroup
+        - !Ref PlacementGroupName
+        - !Ref 'AWS::NoValue'
+      Tags:
+        - Key: 'lustre:type'
+          PropagateAtLaunch: 'true'
+          Value: mdt
+        - Key: 'loci:application'
+          PropagateAtLaunch: 'true'
+          Value: !Ref 'AWS::StackId'
+      VPCZoneIdentifier:
+        - !Ref PrivateSubnet
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+  MDSWaitCondition:
+    DependsOn:
+      - HaLustreResources
+      - MDSNodes
+    Properties:
+      Count: '1'
+      Timeout: '1800'
+    Type: 'AWS::CloudFormation::WaitCondition'
+    Metadata:
+      'AWS::CloudFormation::Designer':
+        id: 46a85815-858d-4b33-a42a-e816003ea097
+  MDSWaitHandle:
+    Properties: {}
+    Type: 'AWS::CloudFormation::WaitConditionHandle'
+  MGSLaunchConfig:
+    DependsOn:
+      - ServerPolicy
+    Metadata:
+      'AWS::CloudFormation::Init':
+        config:
+          files:
+            /etc/cfn/bridge.d/ha_lustre_resources.conf:
+              content: !Join 
+                - ''
+                - - |
+                    [ha_lustre_volumes]
+                  - |
+                    resource_type=Custom::HaLustreResources
+                  - queue_url=
+                  - !Ref HaResourceQueue
+                  - |+
+
+                  - |
+                    default_action=/usr/sbin/loci_cfn_bridge
+            /etc/loci.conf:
+              content: !Join 
+                - ''
+                - - |
+                    [default]
+                  - 'Version: '
+                  - 1.7.0
+                  - |+
+
+                  - 'FsName:'
+                  - !Ref FsName
+                  - |+
+
+                  - 'FilesystemTable:'
+                  - !Ref FilesystemTable
+                  - |+
+
+                  - 'HaEnabled: '
+                  - 'true'
+                  - |+
+
+                  - 'ImportBucket:'
+                  - !Ref ImportBucket
+                  - |+
+
+                  - 'ImportPrefix:'
+                  - !Ref ImportPrefix
+                  - |+
+
+                  - 'ImportDest:'
+                  - !Ref ImportDest
+                  - |+
+
+                  - 'LogDir: '
+                  - /var/log
+                  - |+
+
+                  - 'EnableCloudWatchLogs:'
+                  - !Ref EnableCloudWatchLogs
+                  - |+
+
+                  - 'EnableEBSEncryption:'
+                  - 'true'
+                  - |+
+
+                  - 'EnableIPSec:'
+                  - !Ref EnableIPSec
+                  - |+
+
+                  - 'RolesTable:'
+                  - !Ref RolesTable
+                  - |+
+
+                  - 'MdsCount:'
+                  - '1'
+                  - |+
+
+                  - 'OssCount:'
+                  - !Ref OssCount
+                  - |+
+
+                  - 'MdtVolumeCount:'
+                  - '4'
+                  - |+
+
+                  - 'OstVolumeCount:'
+                  - !Ref OstVolumeCount
+                  - |+
+
+                  - 'GangliaVolumeType: '
+                  - gp2
+                  - |+
+
+                  - 'GangliaVolumePiops: '
+                  - 0
+                  - |+
+
+                  - 'MgtVolumePiops: '
+                  - 0
+                  - |+
+
+                  - 'MgtVolumeType: '
+                  - gp2
+                  - |+
+
+                  - 'GangliaVolumeSize:'
+                  - '16'
+                  - |+
+
+                  - 'MgtVolumeSize:'
+                  - '5'
+                  - |+
+
+                  - 'EnableMdtRaid0:'
+                  - 'true'
+                  - |+
+
+                  - 'MdtVolumeSize:'
+                  - '40'
+                  - |+
+
+                  - 'MdtVolumeType: '
+                  - gp2
+                  - |+
+
+                  - 'MdtVolumePiops: '
+                  - 0
+                  - |+
+
+                  - 'EnableOstRaid0:'
+                  - !Ref EnableOstRaid0
+                  - |+
+
+                  - 'OstVolumeSize:'
+                  - !Ref OstVolumeSize
+                  - |+
+
+                  - 'OstVolumeType: '
+                  - gp2
+                  - |+
+
+                  - 'OstVolumePiops: '
+                  - 0
+                  - |+
+
+              group: root
+              mode: '00644'
+              user: root
+            /etc/sudoers.d/999-requiretty:
+              content: |
+                Defaults !requiretty
+              group: root
+              mode: '00400'
+              user: root
+            /var/awslogs/etc/aws.conf:
+              content: !Join 
+                - ''
+                - - |
+                    [plugins]
+                  - |
+                    cwlogs = cwlogs
+                  - |
+                    [default]
+                  - 'region = '
+                  - !Ref 'AWS::Region'
+                  - |+
+
+              group: root
+              mode: '0600'
+              user: root
+          services:
+            sysvinit:
+              cfn-resource-bridge:
+                enabled: 'true'
+                ensureRunning: 'true'
+    Properties:
+      EbsOptimized: !FindInMap 
+        - AWSInstanceType2Arch
+        - c4.xlarge
+        - EbsOptimized
+      IamInstanceProfile: !Ref ServerInstanceProfile
+      ImageId: !FindInMap 
+        - AWSRegionArch2ServerAMI
+        - !Ref 'AWS::Region'
+        - !FindInMap 
+          - AWSInstanceType2Arch
+          - c4.xlarge
+          - Arch
+      InstanceType: c4.xlarge
+      KeyName: !Ref KeyName
+      SecurityGroups:
+        - !Ref LustreSecurityGroup
+      UserData: !Base64 
+        'Fn::Join':
+          - ''
+          - - |
+              #!/bin/bash -x
+            - 'cfn-init -s '
+            - !Ref 'AWS::StackName'
+            - ' -r MGSLaunchConfig '
+            - '     --region '
+            - !Ref 'AWS::Region'
+            - |+
+
+            - cfn-signal -e $? -r 'MGS cfn-init failed.' '
+            - !Ref MGSWaitHandle
+            - |
+              ' || true
+            - |
+              loci init
+    Type: 'AWS::AutoScaling::LaunchConfiguration'
+  MGSNodes:
+    DependsOn:
+      - ServerPolicy
+      - MGSLaunchConfig
+      - FilesystemTable
+      - RolesTable
+      - PrivateSubnet
+      - PrivateRouteGateway
+    Properties:
+      AvailabilityZones:
+        - !GetAtt 
+          - PrivateSubnet
+          - AvailabilityZone
+      DesiredCapacity: 1
+      LaunchConfigurationName: !Ref MGSLaunchConfig
+      LoadBalancerNames:
+        - !Ref ElasticLoadBalancer
+      MaxSize: 1
+      MinSize: 1
+      PlacementGroup: !If 
+        - UsePlacementGroup
+        - !Ref PlacementGroupName
+        - !Ref 'AWS::NoValue'
+      Tags:
+        - Key: 'lustre:type'
+          PropagateAtLaunch: 'true'
+          Value: mgt
+        - Key: 'loci:application'
+          PropagateAtLaunch: 'true'
+          Value: !Ref 'AWS::StackId'
+      VPCZoneIdentifier:
+        - !Ref PrivateSubnet
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+  MGSWaitCondition:
+    DependsOn: MGSNodes
+    Properties:
+      Count: '1'
+      Handle: !Ref MGSWaitHandle
+      Timeout: '600'
+    Type: 'AWS::CloudFormation::WaitCondition'
+  MGSWaitHandle:
+    Properties: {}
+    Type: 'AWS::CloudFormation::WaitConditionHandle'
+  NATDevice:
+    DependsOn:
+      - NATSecurityGroup
+    Properties:
+      ImageId: !FindInMap 
+        - AWSNATAMI
+        - !Ref 'AWS::Region'
+        - AMI
+      InstanceType: !Ref NATInstanceType
+      KeyName: !Ref KeyName
+      NetworkInterfaces:
+        - AssociatePublicIpAddress: 'true'
+          DeleteOnTermination: 'true'
+          DeviceIndex: '0'
+          GroupSet:
+            - !Ref NATSecurityGroup
+          SubnetId: !Ref VpcPublicSubnetId
+      SourceDestCheck: 'false'
+      Tags:
+        - Key: 'loci:application'
+          Value: !Ref 'AWS::StackId'
+        - Key: Network
+          Value: Public
+        - Key: Name
+          Value: NATDevice
+    Type: 'AWS::EC2::Instance'
+  NATSecurityGroup:
+    Properties:
+      GroupDescription: Enable internal access to the NAT device
+      SecurityGroupEgress:
+        - CidrIp: 0.0.0.0/0
+          FromPort: '80'
+          IpProtocol: tcp
+          ToPort: '80'
+        - CidrIp: 0.0.0.0/0
+          FromPort: '443'
+          IpProtocol: tcp
+          ToPort: '443'
+        - CidrIp: 0.0.0.0/0
+          FromPort: '22'
+          IpProtocol: tcp
+          ToPort: '22'
+      SecurityGroupIngress:
+        - CidrIp: !Ref VpcPrivateCIDR
+          FromPort: '80'
+          IpProtocol: tcp
+          ToPort: '80'
+        - CidrIp: !Ref VpcPrivateCIDR
+          FromPort: '443'
+          IpProtocol: tcp
+          ToPort: '443'
+        - CidrIp: !Ref SSHFrom
+          FromPort: '22'
+          IpProtocol: tcp
+          ToPort: '22'
+      VpcId: !Ref VpcId
+    Type: 'AWS::EC2::SecurityGroup'
+  OSSLaunchConfig:
+    DependsOn:
+      - ServerPolicy
+    Metadata:
+      'AWS::CloudFormation::Init':
+        config:
+          commands:
+            01_loci_init:
+              command: loci init
+          files:
+            /etc/loci.conf:
+              content: !Join 
+                - ''
+                - - |
+                    [default]
+                  - 'Version: '
+                  - 1.7.0
+                  - |+
+
+                  - 'FsName:'
+                  - !Ref FsName
+                  - |+
+
+                  - 'FilesystemTable:'
+                  - !Ref FilesystemTable
+                  - |+
+
+                  - 'HaEnabled: '
+                  - 'true'
+                  - |+
+
+                  - 'ImportBucket:'
+                  - !Ref ImportBucket
+                  - |+
+
+                  - 'ImportPrefix:'
+                  - !Ref ImportPrefix
+                  - |+
+
+                  - 'ImportDest:'
+                  - !Ref ImportDest
+                  - |+
+
+                  - 'LogDir: '
+                  - /var/log
+                  - |+
+
+                  - 'EnableCloudWatchLogs:'
+                  - !Ref EnableCloudWatchLogs
+                  - |+
+
+                  - 'EnableEBSEncryption:'
+                  - 'true'
+                  - |+
+
+                  - 'EnableIPSec:'
+                  - !Ref EnableIPSec
+                  - |+
+
+                  - 'RolesTable:'
+                  - !Ref RolesTable
+                  - |+
+
+                  - 'MdsCount:'
+                  - '1'
+                  - |+
+
+                  - 'OssCount:'
+                  - !Ref OssCount
+                  - |+
+
+                  - 'MdtVolumeCount:'
+                  - '4'
+                  - |+
+
+                  - 'OstVolumeCount:'
+                  - !Ref OstVolumeCount
+                  - |+
+
+                  - 'GangliaVolumeType: '
+                  - gp2
+                  - |+
+
+                  - 'GangliaVolumePiops: '
+                  - 0
+                  - |+
+
+                  - 'MgtVolumePiops: '
+                  - 0
+                  - |+
+
+                  - 'MgtVolumeType: '
+                  - gp2
+                  - |+
+
+                  - 'GangliaVolumeSize:'
+                  - '16'
+                  - |+
+
+                  - 'MgtVolumeSize:'
+                  - '5'
+                  - |+
+
+                  - 'EnableMdtRaid0:'
+                  - 'true'
+                  - |+
+
+                  - 'MdtVolumeSize:'
+                  - '40'
+                  - |+
+
+                  - 'MdtVolumeType: '
+                  - gp2
+                  - |+
+
+                  - 'MdtVolumePiops: '
+                  - 0
+                  - |+
+
+                  - 'EnableOstRaid0:'
+                  - !Ref EnableOstRaid0
+                  - |+
+
+                  - 'OstVolumeSize:'
+                  - !Ref OstVolumeSize
+                  - |+
+
+                  - 'OstVolumeType: '
+                  - gp2
+                  - |+
+
+                  - 'OstVolumePiops: '
+                  - 0
+                  - |+
+
+              group: root
+              mode: '00644'
+              user: root
+            /var/awslogs/etc/aws.conf:
+              content: !Join 
+                - ''
+                - - |
+                    [plugins]
+                  - |
+                    cwlogs = cwlogs
+                  - |
+                    [default]
+                  - 'region = '
+                  - !Ref 'AWS::Region'
+                  - |+
+
+              group: root
+              mode: '0600'
+              user: root
+    Properties:
+      EbsOptimized: !FindInMap 
+        - AWSInstanceType2Arch
+        - !Ref OssInstanceType
+        - EbsOptimized
+      IamInstanceProfile: !Ref ServerInstanceProfile
+      ImageId: !FindInMap 
+        - AWSRegionArch2ServerAMI
+        - !Ref 'AWS::Region'
+        - !FindInMap 
+          - AWSInstanceType2Arch
+          - !Ref OssInstanceType
+          - Arch
+      InstanceMonitoring: 'false'
+      InstanceType: !Ref OssInstanceType
+      KeyName: !Ref KeyName
+      SecurityGroups:
+        - !Ref LustreSecurityGroup
+      UserData: !Base64 
+        'Fn::Join':
+          - ''
+          - - |
+              #!/bin/bash -x
+            - 'cfn-init -s '
+            - !Ref 'AWS::StackName'
+            - ' -r OSSLaunchConfig '
+            - '   --region '
+            - !Ref 'AWS::Region'
+            - |+
+
+            - cfn-signal -e $? -r 'OSS loci init failed.' '
+            - !Ref OssWaitHandle
+            - |
+              ' || true
+    Type: 'AWS::AutoScaling::LaunchConfiguration'
+  OSSNodes:
+    Properties:
+      AvailabilityZones:
+        - !GetAtt 
+          - PrivateSubnet
+          - AvailabilityZone
+      DesiredCapacity: !Ref OssCount
+      LaunchConfigurationName: !Ref OSSLaunchConfig
+      MaxSize: !Ref OssCount
+      MinSize: !Ref OssCount
+      PlacementGroup: !If 
+        - UsePlacementGroup
+        - !Ref PlacementGroupName
+        - !Ref 'AWS::NoValue'
+      Tags:
+        - Key: 'lustre:type'
+          PropagateAtLaunch: 'true'
+          Value: ost
+        - Key: 'loci:application'
+          PropagateAtLaunch: 'true'
+          Value: !Ref 'AWS::StackId'
+      VPCZoneIdentifier:
+        - !Ref PrivateSubnet
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+  OssWaitCondition:
+    DependsOn:
+      - HaLustreResources
+      - OSSNodes
+    Properties:
+      Count: !Ref OssCount
+      Handle: !Ref OssWaitHandle
+      Timeout: '1800'
+    Type: 'AWS::CloudFormation::WaitCondition'
+  OssWaitHandle:
+    Properties: {}
+    Type: 'AWS::CloudFormation::WaitConditionHandle'
+  OutboundPrivateNetworkAclEntry:
+    DependsOn: PrivateNetworkAcl
+    Properties:
+      CidrBlock: 0.0.0.0/0
+      Egress: 'true'
+      NetworkAclId: !Ref PrivateNetworkAcl
+      PortRange:
+        From: '0'
+        To: '65535'
+      Protocol: '-1'
+      RuleAction: allow
+      RuleNumber: '100'
+    Type: 'AWS::EC2::NetworkAclEntry'
+  PrivateNetworkAcl:
+    Properties:
+      Tags:
+        - Key: 'loci:application'
+          Value: !Ref 'AWS::StackId'
+        - Key: Network
+          Value: Private
+      VpcId: !Ref VpcId
+    Type: 'AWS::EC2::NetworkAcl'
+  PrivateRouteGateway:
+    DependsOn:
+      - NATDevice
+      - PrivateSubnetRouteTableAssociation
+      - PrivateSubnetNetworkAclAssociation
+    Properties:
+      DestinationCidrBlock: 0.0.0.0/0
+      InstanceId: !Ref NATDevice
+      RouteTableId: !Ref PrivateRouteTable
+    Type: 'AWS::EC2::Route'
+  PrivateRouteTable:
+    Properties:
+      Tags:
+        - Key: 'loci:application'
+          Value: !Ref 'AWS::StackId'
+        - Key: Network
+          Value: Private
+      VpcId: !Ref VpcId
+    Type: 'AWS::EC2::RouteTable'
+  PrivateSubnet:
+    Properties:
+      AvailabilityZone: !GetAtt 
+        - NATDevice
+        - AvailabilityZone
+      CidrBlock: !Ref VpcPrivateCIDR
+      Tags:
+        - Key: 'loci:application'
+          Value: !Ref 'AWS::StackId'
+        - Key: Network
+          Value: Private
+      VpcId: !Ref VpcId
+    Type: 'AWS::EC2::Subnet'
+  PrivateSubnetNetworkAclAssociation:
+    DependsOn:
+      - InboundPrivateNetworkAclEntry
+      - OutboundPrivateNetworkAclEntry
+    Properties:
+      NetworkAclId: !Ref PrivateNetworkAcl
+      SubnetId: !Ref PrivateSubnet
+    Type: 'AWS::EC2::SubnetNetworkAclAssociation'
+  PrivateSubnetRouteTableAssociation:
+    DependsOn: PrivateRouteTable
+    Properties:
+      RouteTableId: !Ref PrivateRouteTable
+      SubnetId: !Ref PrivateSubnet
+    Type: 'AWS::EC2::SubnetRouteTableAssociation'
+  RolesTable:
+    Properties:
+      KeySchema:
+        HashKeyElement:
+          AttributeName: role_name
+          AttributeType: S
+      ProvisionedThroughput:
+        ReadCapacityUnits: '10'
+        WriteCapacityUnits: '5'
+    Type: 'AWS::DynamoDB::Table'
+  ServerInstanceProfile:
+    Properties:
+      Path: /
+      Roles:
+        - !Ref ServerRole
+    Type: 'AWS::IAM::InstanceProfile'
+  ServerPolicy:
+    DependsOn: BasePolicy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - 'ec2:AttachNetworkInterface'
+              - 'ec2:AttachVolume'
+              - 'ec2:CreateNetworkInterface'
+              - 'ec2:CreateVolume'
+              - 'ec2:DeleteNetworkInterface'
+              - 'ec2:DeleteVolume'
+              - 'ec2:DetachNetworkInterface'
+              - 'ec2:DetachVolume'
+              - 'ec2:CreateSnapshot'
+              - 'ec2:DescribeSnapshots'
+              - 'ec2:DeleteSnapshot'
+              - 'ec2:DescribeNetworkInterfaces'
+              - 'ec2:DescribeNetworkInterfaceAttribute'
+              - 'ec2:DescribeVolumes'
+              - 'ec2:DescribeVolumeAttribute'
+              - 'ec2:DescribeVolumeStatus'
+              - 'autoscaling:DescribeAutoScalingGroups'
+              - 'autoscaling:UpdateAutoScalingGroup'
+            Effect: Allow
+            Resource: '*'
+          - Action:
+              - 'sqs:ChangeMessageVisibility'
+              - 'sqs:DeleteMessage'
+              - 'sqs:ReceiveMessage'
+            Effect: Allow
+            Resource: !GetAtt 
+              - HaResourceQueue
+              - Arn
+      PolicyName: ServerPolicy
+      Roles:
+        - !Ref ServerRole
+    Type: 'AWS::IAM::Policy'
+  ServerRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - 'sts:AssumeRole'
+            Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+      Path: /
+    Type: 'AWS::IAM::Role'
+  WorkerInstanceProfile:
+    Properties:
+      Path: /
+      Roles:
+        - !Ref WorkerRole
+    Type: 'AWS::IAM::InstanceProfile'
+  WorkerLaunchConfig:
+    DependsOn:
+      - WorkerPolicy
+    Metadata:
+      'AWS::CloudFormation::Init':
+        config:
+          files:
+            /etc/loci.conf:
+              content: !Join 
+                - ''
+                - - |
+                    [default]
+                  - 'Version: '
+                  - 1.7.0
+                  - |+
+
+                  - 'FsName:'
+                  - !Ref FsName
+                  - |+
+
+                  - 'FilesystemTable:'
+                  - !Ref FilesystemTable
+                  - |+
+
+                  - 'HaEnabled: '
+                  - 'true'
+                  - |+
+
+                  - 'ImportBucket:'
+                  - !Ref ImportBucket
+                  - |+
+
+                  - 'ImportPrefix:'
+                  - !Ref ImportPrefix
+                  - |+
+
+                  - 'ImportDest:'
+                  - !Ref ImportDest
+                  - |+
+
+                  - 'LogDir: '
+                  - /var/log
+                  - |+
+
+                  - 'EnableCloudWatchLogs:'
+                  - !Ref EnableCloudWatchLogs
+                  - |+
+
+                  - 'EnableEBSEncryption:'
+                  - 'true'
+                  - |+
+
+                  - 'EnableIPSec:'
+                  - !Ref EnableIPSec
+                  - |+
+
+                  - 'RolesTable:'
+                  - !Ref RolesTable
+                  - |+
+
+                  - 'MdsCount:'
+                  - '1'
+                  - |+
+
+                  - 'OssCount:'
+                  - !Ref OssCount
+                  - |+
+
+                  - 'MdtVolumeCount:'
+                  - '4'
+                  - |+
+
+                  - 'OstVolumeCount:'
+                  - !Ref OstVolumeCount
+                  - |+
+
+                  - 'GangliaVolumeType: '
+                  - gp2
+                  - |+
+
+                  - 'GangliaVolumePiops: '
+                  - 0
+                  - |+
+
+                  - 'MgtVolumePiops: '
+                  - 0
+                  - |+
+
+                  - 'MgtVolumeType: '
+                  - gp2
+                  - |+
+
+                  - 'GangliaVolumeSize:'
+                  - '16'
+                  - |+
+
+                  - 'MgtVolumeSize:'
+                  - '5'
+                  - |+
+
+                  - 'EnableMdtRaid0:'
+                  - 'true'
+                  - |+
+
+                  - 'MdtVolumeSize:'
+                  - '40'
+                  - |+
+
+                  - 'MdtVolumeType: '
+                  - gp2
+                  - |+
+
+                  - 'MdtVolumePiops: '
+                  - 0
+                  - |+
+
+                  - 'EnableOstRaid0:'
+                  - !Ref EnableOstRaid0
+                  - |+
+
+                  - 'OstVolumeSize:'
+                  - !Ref OstVolumeSize
+                  - |+
+
+                  - 'OstVolumeType: '
+                  - gp2
+                  - |+
+
+                  - 'OstVolumePiops: '
+                  - 0
+                  - |+
+
+              group: root
+              mode: '00644'
+              user: root
+            /var/awslogs/etc/aws.conf:
+              content: !Join 
+                - ''
+                - - |
+                    [plugins]
+                  - |
+                    cwlogs = cwlogs
+                  - |
+                    [default]
+                  - 'region = '
+                  - !Ref 'AWS::Region'
+                  - |+
+
+              group: root
+              mode: '0600'
+              user: root
+    Properties:
+      IamInstanceProfile: !Ref WorkerInstanceProfile
+      ImageId: !FindInMap 
+        - AWSRegionArch2ServerAMI
+        - !Ref 'AWS::Region'
+        - !FindInMap 
+          - AWSInstanceType2Arch
+          - !Ref WorkerInstanceType
+          - Arch
+      InstanceMonitoring: 'false'
+      InstanceType: !Ref WorkerInstanceType
+      KeyName: !Ref KeyName
+      SecurityGroups:
+        - !Ref LustreSecurityGroup
+      UserData: !Base64 
+        'Fn::Join':
+          - ''
+          - - |
+              #!/bin/bash -ex
+            - 'cfn-init -s '
+            - !Ref 'AWS::StackName'
+            - ' -r WorkerLaunchConfig '
+            - '   --region '
+            - !Ref 'AWS::Region'
+            - |+
+
+            - |
+              loci init
+    Type: 'AWS::AutoScaling::LaunchConfiguration'
+  WorkerNodes:
+    Properties:
+      AvailabilityZones:
+        - !GetAtt 
+          - PrivateSubnet
+          - AvailabilityZone
+      DesiredCapacity: !Ref WorkerCount
+      LaunchConfigurationName: !Ref WorkerLaunchConfig
+      MaxSize: !Ref WorkerCount
+      MinSize: !Ref WorkerCount
+      PlacementGroup: !If 
+        - UsePlacementGroup
+        - !Ref PlacementGroupName
+        - !Ref 'AWS::NoValue'
+      Tags:
+        - Key: 'lustre:type'
+          PropagateAtLaunch: 'true'
+          Value: worker
+        - Key: 'loci:application'
+          PropagateAtLaunch: 'true'
+          Value: !Ref 'AWS::StackId'
+      VPCZoneIdentifier:
+        - !Ref PrivateSubnet
+    Type: 'AWS::AutoScaling::AutoScalingGroup'
+  WorkerPolicy:
+    DependsOn: BasePolicy
+    Properties:
+      PolicyDocument:
+        Statement:
+          - Action:
+              - 's3:ListBucket'
+            Effect: Allow
+            Resource:
+              - !Join 
+                - ''
+                - - !If 
+                    - RegionIsGovCloud
+                    - 'arn:aws-us-gov:s3:::'
+                    - 'arn:aws:s3:::'
+                  - !Ref ImportBucket
+          - Action:
+              - 's3:GetObject'
+            Effect: Allow
+            Resource:
+              - !Join 
+                - ''
+                - - !If 
+                    - RegionIsGovCloud
+                    - 'arn:aws-us-gov:s3:::'
+                    - 'arn:aws:s3:::'
+                  - !Ref ImportBucket
+                  - /*
+      PolicyName: ServerPolicy
+      Roles:
+        - !Ref WorkerRole
+    Type: 'AWS::IAM::Policy'
+  WorkerRole:
+    Properties:
+      AssumeRolePolicyDocument:
+        Statement:
+          - Action:
+              - 'sts:AssumeRole'
+            Effect: Allow
+            Principal:
+              Service:
+                - ec2.amazonaws.com
+      Path: /
+    Type: 'AWS::IAM::Role'
