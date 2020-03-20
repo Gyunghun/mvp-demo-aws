@@ -61,7 +61,7 @@ variable "region" {
 }
 
 variable "aws_profle_name" {
-  default = "cs1u"
+  default = "default"
 }
 
 variable "project_name" {

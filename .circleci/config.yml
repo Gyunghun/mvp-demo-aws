@@ -1,4 +1,14 @@
-version: 2
+# 2020.03.20 Ver.16
+version: 2.1
+orbs:
+  slack: circleci/slack@3.3.0
+executors:
+  go-executor:
+    docker:
+      - image: circleci/golang:1.13.4
+  terraform-executor:
+    docker:
+      - image: hashicorp/terraform:0.12.23
 
 terraform: &terraform
   docker:
@@ -6,25 +16,105 @@ terraform: &terraform
   working_directory: /tmp/workspace/terraform
 
 jobs:
-  validate:
-    <<: *terraform
+  start-workflow:
+    docker:
+      - image: "circleci/python:2.7"
+    steps:
+      - run:
+          name: Workflow Start job
+          command: |
+            echo "Workflow Start!"
+            echo ${CIRCLE_BUILD_URL}
+            echo ${CIRCLE_COMPARE_URL}
+            echo ${CIRCLE_JOB}
+  # validate:
+  #   <<: *terraform
+  #   steps:
+  #     - checkout
+  #     - run:
+  #         name: Validate Terraform configurations
+  #         command: find . -type f -name "*.tf" -exec dirname {} \;|sort -u | while read dir; do (pushd $dir; terraform init -backend=false && terraform validate && echo "Validate OK - $dir"; popd;)|| exit 1; done
+  aws-vpc:
+    executor: terraform-executor
+    working_directory: ~/project
     steps:
       - checkout
       - run:
-          name: Validate Terraform configurations
-          command: find . -type f -name "*.tf" -exec dirname {} \;|sort -u | while read m; do (terraform validate -check-variables=false "$m" && echo "√ $m") || exit 1 ; done
+          command: |
+            cd ~/project/vpc
+            terraform init -input=false
+            terraform apply -auto-approve
+  aws-s3:
+    executor: terraform-executor
+    working_directory: ~/project
+    steps:
+      - checkout
       - run:
-          name: Check if Terraform configurations are properly formatted
-          command: files=$(terraform fmt -write=false); if [ -n "$files" ]; then echo "$files"; echo -e "\nSome terraform files need be formatted, run 'terraform fmt' to fix"; exit 1; fi
+          command: |
+            cd ~/project/s3
+            terraform init -input=false
+            terraform apply -auto-approve
+  aws-eks:
+    executor: terraform-executor
+    working_directory: ~/project
+    steps:
+      - checkout
       - run:
-          name: Install tflint
-          command: curl -L -o /tmp/tflint.zip https://github.com/terraform-linters/tflint/releases/download/v0.15.2/tflint_linux_amd64.zip && unzip /tmp/tflint.zip -d /usr/local/bin
+          command: |
+            cd ~/project/eks
+            terraform init -input=false
+            terraform apply -auto-approve
+  aws-es:
+    executor: terraform-executor
+    working_directory: ~/project
+    steps:
+      - checkout
       - run:
-          name: Check Terraform configurations with tflint
-          command: tflint
+          command: |
+            cd ~/project/elasticsearch
+            terraform init -input=false
+            terraform apply -auto-approve
+
+  # gcp-apply:
+  #   executor: terraform-executor
+  #   working_directory: ~/project
+  #   steps:
+  #     - checkout
+  #     - run:
+  #         command: |
+  #           cd ~/project/gcp
+  #           terraform init -input=false
+  #           terraform apply -auto-approve
 
 workflows:
-  version: 2
-  build:
+  demo-pipeline:
     jobs:
-      - validate
+      - start-workflow:
+          name: start-workflow
+      - demo-vpc:
+          name: test-iac-code
+          requires:
+            - start-workflow
+      # - slack/approval-notification:
+      #     message: Apply Pending approval
+      #     color: '#42e2f4'
+      #     mentions: 'UEXB11CMR'
+      #     webhook: '${SLACK_WEBHOOK}'
+      #     requires:
+      #       - test-iac-code
+      # - hold:
+      #     type: approval
+      #     requires:
+      #       - slack/approval-notification
+      - demo-s3
+          # requires:
+          #   - hold
+      - demo-efs
+          # requires:
+          #   - hold
+      - demo-eks
+          # requires:
+          #   - hold
+      - demo-es
+          # requires:
+          #   - hold

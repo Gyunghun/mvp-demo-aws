@@ -1,5 +1,5 @@
 variable "aws_profile_name" {
-  default = "cs1u"
+  default = "default"
 }
 
 variable "region" {
