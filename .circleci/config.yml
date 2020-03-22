@@ -66,7 +66,40 @@ jobs:
             ./set_aws_configure.sh; cd efs
             terraform init -input=false -backend-config="profile=cs1u"
             terraform plan; terraform apply -auto-approve
-
+  demo-telemetry:
+    <<: *terraform
+    steps:
+      - checkout
+      - run:
+          command: |
+            ./set_aws_configure.sh; 
+            aws eks --region ap-northeast-2 update-kubeconfig --name mvp-demo-tp2
+            # kubectl create namespace istio-system2
+            # helm template install/kubernetes/helm/istio-init istio-init --namespace istio-system2 | kubectl apply -f -
+            # sleep 30s
+            # kubectl get crds -n istio-system2 | grep 'istio.io\|certmanager.k8s.io' | wc -l
+            # helm template install/kubernetes/helm/istio --values install/kubernetes/helm/istio/values-istio-demo.yaml istio --namespace istio-system2 | kubectl apply -f -
+            # sleep 30s
+            # apk add curl; curl -sL https://istio.io/downloadIstioctl | sh -; export PATH=$PATH:$HOME/.istioctl/bin
+            # kubectl apply -f <(istioctl kube-inject -f samples/bookinfo/platform/kube/bookinfo.yaml)
+            # sleep 30s
+            # kubectl apply -f samples/bookinfo/networking/bookinfo-gateway.yaml
+            echo "Complete"
+  demo-apps:
+    <<: *terraform
+    steps:
+      - checkout
+      - run:
+          command: |
+            ./set_aws_configure.sh; 
+            aws eks --region ap-northeast-2 update-kubeconfig --name mvp-demo-tp2
+            echo "Complete"
+  demo-notify:
+    <<: *terraform
+    steps:
+      - run:
+          command: |
+            echo "Complete"
 workflows:
   version: 2
   demo-pipeline:
@@ -87,7 +120,14 @@ workflows:
             - demo-vpc
       - demo-eks:
           requires:
-            - demo-vpc
+            - demo-vpc      
+      - demo-telemetry:
+          requires:
+            - demo-eks
+      - demo-apps:
+          requires:
+            - demo-eks
+            - demo-telemetry
       - demo-es:
           requires:
             - demo-vpc
