@@ -1,5 +1,5 @@
 resource "aws_security_group" "es" {
-  name        = "sg_private_${local.es-name}"
+  name        = "sg_private_${local.es_name}"
   vpc_id      = data.aws_vpc.mvp-es.id
   description = "Allow https inbound from same VPC"
 

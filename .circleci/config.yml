@@ -6,7 +6,7 @@ orbs:
 terraform: &terraform
   docker:
     - image: mungi/cloud-cli
-  working_directory: /tmp/project
+  working_directory: ~/project
 
 jobs:
   build:
@@ -18,11 +18,7 @@ jobs:
           command: |
             echo "Workflow Start!"
             echo $(pwd)
-            ls -la $(pwd)
-            bash -c ./set_aws_configure.sh
-            cat ~/.aws/config
-            cat ~/.aws/credentials
-            export AWS_PROFILE=cs1u
+            ./set_aws_configure.sh
             aws sts get-caller-identity
   demo-vpc:
     <<: *terraform
@@ -30,45 +26,46 @@ jobs:
       - checkout
       - run:
           command: |
-            cd ~/project/vpc
+            ./set_aws_configure.sh; cd vpc
             terraform init -input=false -backend-config="profile=cs1u"
-            terraform apply -auto-approve
+            terraform plan; terraform apply -auto-approve
   demo-s3:
     <<: *terraform
     steps:
       - checkout
       - run:
           command: |
-            cd ~/project/s3
+            ./set_aws_configure.sh; cd S3
             terraform init -input=false -backend-config="profile=cs1u"
-            terraform apply -auto-approve
+            terraform plan; terraform apply -auto-approve
   demo-eks:
     <<: *terraform
     steps:
       - checkout
       - run:
           command: |
-            cd ~/project/eks
+            ./set_aws_configure.sh; cd eks
+            aws eks --region ap-northeast-2 update-kubeconfig --name mvp-demo-tp2
             terraform init -input=false -backend-config="profile=cs1u"
-            terraform apply -auto-approve
+            terraform plan; terraform apply -auto-approve
   demo-es:
     <<: *terraform
     steps:
       - checkout
       - run:
           command: |
-            cd ~/project/elasticsearch
+            ./set_aws_configure.sh; cd elasticsearch
             terraform init -input=false -backend-config="profile=cs1u"
-            terraform apply -auto-approve
+            terraform plan; terraform apply -auto-approve
   demo-efs:
     <<: *terraform
     steps:
       - checkout
       - run:
           command: |
-            cd ~/project/efs
+            ./set_aws_configure.sh; cd efs
             terraform init -input=false -backend-config="profile=cs1u"
-            terraform apply -auto-approve
+            terraform plan; terraform apply -auto-approve
 
 workflows:
   version: 2

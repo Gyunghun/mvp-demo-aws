@@ -30,7 +30,7 @@ resource "aws_instance" "win2019" {
   count = 1
   tags = {
     Purpose = "bastion"
-    Name    = "${local.es-name}_win2019_bastion"
+    Name    = "${local.es_name}_win2019_bastion"
   }
 }
 
@@ -58,7 +58,7 @@ resource "aws_instance" "ubuntu" {
   count = 1
   tags = {
     Purpose = "bastion"
-    Name    = "${local.es-name}_ubuntu_bastion_"
+    Name    = "${local.es_name}_ubuntu_bastion_"
   }
 }
 
