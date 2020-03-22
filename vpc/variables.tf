@@ -21,7 +21,7 @@ variable "region" {
 }
 
 variable "aws_profle_name" {
-  default = "default"
+  default = "cs1u"
 }
 
 

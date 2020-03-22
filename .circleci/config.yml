@@ -20,6 +20,8 @@ jobs:
             echo $(pwd)
             ls -la $(pwd)
             bash -c ./set_aws_configure.sh
+            export AWS_PROFILE=cs1u
+            aws sts get-caller-identity
   demo-vpc:
     <<: *terraform
     steps:
