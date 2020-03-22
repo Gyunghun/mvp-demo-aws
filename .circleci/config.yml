@@ -137,3 +137,5 @@ workflows:
             - demo-efs
             - demo-eks
             - demo-es
+            - demo-telemetry
+            - demo-apps
