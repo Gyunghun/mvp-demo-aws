@@ -1,91 +1,98 @@
 # 2020.03.20 Ver.16
-version: 2.1
+version: 2
 orbs:
   slack: circleci/slack@3.3.0
-executors:
-  go-executor:
-    docker:
-      - image: circleci/golang:1.13.4
-  terraform-executor:
-    docker:
-      - image: hashicorp/terraform:0.12.23
 
+terraform: &terraform
+  docker:
+    - image: mungi/cloud-cli
+  working_directory: /tmp/project
 
 jobs:
-  start-workflow:
-    docker:
-      - image: "circleci/python:2.7"
+  build:
+    <<: *terraform
     steps:
+      - checkout
       - run:
           name: Workflow Start job
           command: |
             echo "Workflow Start!"
-            echo ${CIRCLE_BUILD_URL}
-            echo ${CIRCLE_COMPARE_URL}
-            echo ${CIRCLE_JOB}
-  aws-vpc:
-    executor: terraform-executor
-    working_directory: ~/project
+            echo $(pwd)
+            ls -la $(pwd)
+            bash -c ./set_aws_configure.sh
+  demo-vpc:
+    <<: *terraform
     steps:
       - checkout
       - run:
           command: |
             cd ~/project/vpc
-            terraform init -input=false
+            terraform init -input=false -backend-config="profile=cs1u"
             terraform apply -auto-approve
-  aws-s3:
-    executor: terraform-executor
-    working_directory: ~/project
+  demo-s3:
+    <<: *terraform
     steps:
       - checkout
       - run:
           command: |
             cd ~/project/s3
-            terraform init -input=false
+            terraform init -input=false -backend-config="profile=cs1u"
             terraform apply -auto-approve
-  aws-eks:
-    executor: terraform-executor
-    working_directory: ~/project
+  demo-eks:
+    <<: *terraform
     steps:
       - checkout
       - run:
           command: |
             cd ~/project/eks
-            terraform init -input=false
+            terraform init -input=false -backend-config="profile=cs1u"
             terraform apply -auto-approve
-  aws-es:
-    executor: terraform-executor
-    working_directory: ~/project
+  demo-es:
+    <<: *terraform
     steps:
       - checkout
       - run:
           command: |
             cd ~/project/elasticsearch
-            terraform init -input=false
+            terraform init -input=false -backend-config="profile=cs1u"
+            terraform apply -auto-approve
+  demo-efs:
+    <<: *terraform
+    steps:
+      - checkout
+      - run:
+          command: |
+            cd ~/project/efs
+            terraform init -input=false -backend-config="profile=cs1u"
             terraform apply -auto-approve
 
 workflows:
+  version: 2
   demo-pipeline:
     jobs:
-      - start-workflow:
-          name: start-workflow
-      - demo-vpc:
-          name: demo-vpc
+      - build
+      - hold:
+          type: approval
           requires:
-            - demo-vpc
+            - build
+      - demo-vpc:
+          requires:
+            - hold
       - demo-s3:
-          name: demo-s3
           requires:
             - demo-vpc
       - demo-efs:
-          name: demo-efs
           requires:
             - demo-vpc
       - demo-eks:
-          name: demo-eks
           requires:
             - demo-vpc
       - demo-es:
-          name: demo-es
           requires:
             - demo-vpc
+      - demo-notify:
+          requires:
+            - demo-s3
+            - demo-efs
+            - demo-eks
+            - demo-es
