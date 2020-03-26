@@ -11,7 +11,7 @@ variable "project_name" {
 }
 
 variable "suffix" {
-  default = "jpn"
+  default = "fsx"
 }
 
 locals {
