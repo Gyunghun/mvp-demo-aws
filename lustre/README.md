@@ -28,4 +28,14 @@ RHEL, CentOS만 검증되었음
     Auto Configuration
     root 계정에서 아래 실행
         curl http://<mgs-ip>/install-client | bash
-    
+
+## Terraform
+- 현재 FSx는 Seoul Region을 지원하지 않아, Tokyo에 생성
+- VPC는 일단 테스트를 위해 별도 생성
+- Terraform은 현재 Scratch 타입만 지원
+
+```
+terraform init -backend-config="profile=cs1u"
+terraform plan
+terraform apply -auto-approve
+```
