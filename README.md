@@ -36,6 +36,6 @@ provider "aws" {
 
 
 ### 프로파일 생성
-- 환경 변수에 AWS_ACCESS_KEY_ID, $AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION 가 정의 되어 있을 경우
+- 환경 변수에 AWS_ACCESS_KEY_ID, AWS_SECRET_ACCESS_KEY, AWS_DEFAULT_REGION 가 정의 되어 있을 경우
 `set_aws_configure.sh`를 실행하면 `cs1u` 프로파일로 설정해준다.
 - Docker 실행시 profile 셋팅을 위해 만듦
