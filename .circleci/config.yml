@@ -3,14 +3,37 @@ version: 2
 orbs:
   slack: circleci/slack@3.3.0
 
-terraform: &terraform
+tf-k8s: &tf-k8s
   docker:
     - image: mungi/terraform-aws-k8s
   working_directory: ~/project
 
+tf-run: &tf-run
+  command: |
+    cd ${MODULE_DIR}; pwd
+    ../set_aws_configure.sh
+    terraform init -input=false -backend-config="../project.tfvars"
+    terraform plan  -var-file="../project.tfvars"
+    terraform apply -var-file="../project.tfvars" -auto-approve
+
+terraform-run: &terraform-run
+  docker:
+    - image: mungi/terraform-aws-k8s
+  working_directory: ~/project
+  steps:
+    - checkout
+    - run:
+        name: Run terraform at ${MODULE_DIR}
+        command: |
+          cd ${MODULE_DIR}; pwd
+          ../set_aws_configure.sh
+          terraform init -input=false -backend-config="../project.tfvars"
+          terraform plan  -var-file="../project.tfvars"
+          terraform apply -var-file="../project.tfvars" -auto-approve
+
 jobs:
   build:
-    <<: *terraform
+    <<: *tf-k8s
     steps:
       - checkout
       - run:
@@ -19,55 +42,35 @@ jobs:
             echo "Workflow Start!"
             echo $(pwd)
             ./set_aws_configure.sh
-            aws sts get-caller-identity
+            aws sts get-caller-identity profile cs1u
+
   demo-vpc:
-    <<: *terraform
-    steps:
-      - checkout
-      - run:
-          command: |
-            ./set_aws_configure.sh; cd vpc
-            terraform init -input=false -backend-config="profile=cs1u"
-            terraform plan; terraform apply -auto-approve
+    environment:
+      MODULE_DIR: vpc
+    <<: *terraform-run
+
   demo-s3:
-    <<: *terraform
-    steps:
-      - checkout
-      - run:
-          command: |
-            ./set_aws_configure.sh; cd S3
-            terraform init -input=false -backend-config="profile=cs1u"
-            terraform plan; terraform apply -auto-approve
-  demo-eks:
-    <<: *terraform
-    steps:
-      - checkout
-      - run:
-          command: |
-            ./set_aws_configure.sh; cd eks
-            aws eks --region ap-northeast-2 update-kubeconfig --name mvp-demo-tp2
-            terraform init -input=false -backend-config="profile=cs1u"
-            terraform plan; terraform apply -auto-approve
-  demo-es:
-    <<: *terraform
-    steps:
-      - checkout
-      - run:
-          command: |
-            ./set_aws_configure.sh; cd elasticsearch
-            terraform init -input=false -backend-config="profile=cs1u"
-            terraform plan; terraform apply -auto-approve
+    environment:
+      MODULE_DIR: S3
+    <<: *terraform-run
+
   demo-efs:
-    <<: *terraform
-    steps:
-      - checkout
-      - run:
-          command: |
-            ./set_aws_configure.sh; cd efs
-            terraform init -input=false -backend-config="profile=cs1u"
-            terraform plan; terraform apply -auto-approve
+    environment:
+      MODULE_DIR: efs
+    <<: *terraform-run
+
+  demo-es:
+    environment:
+      MODULE_DIR: es
+    <<: *terraform-run
+
+  demo-eks:
+    environment:
+      MODULE_DIR: eks
+    <<: *terraform-run
+
   demo-telemetry:
-    <<: *terraform
+    <<: *tf-k8s
     steps:
       - checkout
       - run:
@@ -85,8 +88,9 @@ jobs:
             # sleep 30s
             # kubectl apply -f samples/bookinfo/networking/bookinfo-gateway.yaml
             echo "Complete"
+
   demo-apps:
-    <<: *terraform
+    <<: *tf-k8s
     steps:
       - checkout
       - run:
@@ -94,12 +98,14 @@ jobs:
             ./set_aws_configure.sh; 
             aws eks --region ap-northeast-2 update-kubeconfig --name mvp-demo-tp2
             echo "Complete"
+
   demo-notify:
-    <<: *terraform
+    <<: *tf-k8s
     steps:
       - run:
           command: |
             echo "Complete"
+
 workflows:
   version: 2
   demo-pipeline:
