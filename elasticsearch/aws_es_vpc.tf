@@ -20,18 +20,18 @@ resource "aws_elasticsearch_domain" "mvp-es" {
   elasticsearch_version = "7.1"
 
   cluster_config {
-    instance_type = "t2.medium.elasticsearch"
+    instance_type  = "t2.medium.elasticsearch"
     instance_count = 2
   }
 
   ebs_options {
     ebs_enabled = true
-    volume_size = 15
+    volume_size = 30
   }
 
   vpc_options {
-    subnet_ids = [ data.aws_subnet.mvp-es.id ]
-    security_group_ids = [ aws_security_group.es.id ]
+    subnet_ids         = [data.aws_subnet.mvp-es.id]
+    security_group_ids = [aws_security_group.es.id]
   }
 
   advanced_options = {
@@ -57,17 +57,18 @@ CONFIG
   }
 
   tags = {
-    Domain = "mvp-demo"
+    Domain      = var.project_name
+    Terraform   = "true"
+    Environment = "dev"
   }
-
 }
 
 output "ElasticSearch_Endpoint" {
   description = "Elasticsearch Enpoint"
-  value = aws_elasticsearch_domain.mvp-es.endpoint
+  value       = "https://${aws_elasticsearch_domain.mvp-es.endpoint}"
 }
 
 output "Kibana_Endpoint" {
   description = "Kibana Enpoint"
-  value = aws_elasticsearch_domain.mvp-es.kibana_endpoint
+  value       = "https://${aws_elasticsearch_domain.mvp-es.kibana_endpoint}"
 }

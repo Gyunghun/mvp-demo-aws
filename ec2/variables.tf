@@ -17,11 +17,8 @@ variable "bucket" {
 }
 #############################################################################
 
-variable "ec2_keypair" {
-  default = "mvp_demo"
-}
-
 locals {
   vpc_name = "${var.project_name}"
-  es_name  = "${var.project_name}"
+  ec2_prefix  = "${var.project_name}"
+  ec2_public_key = file("../ec2-public-ssh-key")
 }

@@ -8,7 +8,7 @@ rm -rf .terraform
 rm -f *.tfstate*
 ```
 
-- 실행 방법
+- 실행
 ```
 terraform init  -backend-config="../project.tfvars"
 terraform plan  -var-file="../project.tfvars"

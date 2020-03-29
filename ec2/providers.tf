@@ -7,7 +7,7 @@ provider "aws" {
 terraform {
   required_version = ">= 0.12.0"
   backend "s3" {
-    key            = "project/elasticsearch.tfstate"
+    key            = "project/ec2.tfstate"
     encrypt        = true
     acl            = "bucket-owner-full-control"
   }
