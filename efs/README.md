@@ -1,13 +1,14 @@
 
 # How to launch
-- 처음 실행시 기존 잔여 부분 삭제
+- 처음 실행시 기존 잔여 부분 있다면 삭제
 ```
 rm -rf .terraform
+rm -f *.tfstate*
 ```
 
-- 초기화 -> 체크 -> 적용
+- 실행 방법
 ```
-terraform init -backend-config="profile=cs1u"
-terraform plan
-terraform apply -auto-approve
+terraform init  -backend-config="../project.tfvars"
+terraform plan  -var-file="../project.tfvars"
+terraform apply -var-file="../project.tfvars" -auto-approve
 ```

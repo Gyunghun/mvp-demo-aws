@@ -13,12 +13,6 @@ resource "aws_efs_file_system" "mvp_demo" {
   } 
 }
 
-# resource "aws_efs_mount_target" "alpha" {
-#   file_system_id = aws_efs_file_system.mvp_demo.id
-#   subnet_id      = data.aws_subnet.mvp-efs.id
-# }
-
-
 data "aws_vpc" "mvp-efs" {
   tags = {
     Name = local.vpc_name
@@ -48,4 +42,3 @@ resource "aws_efs_mount_target" "mvp-efs" {
   subnet_id = element( [for s in data.aws_subnet.mvp-priv : s.id], count.index )
   # security_groups = ["${aws_security_group.efs-sg.id}"]
 }
-# 

@@ -1,15 +1,13 @@
 provider "aws" {
   version = "~> 2.0"
   region  = var.region
-  profile = var.aws_profle_name
+  profile = var.profile
 }
 
 terraform {
   required_version = ">= 0.12.0"
   backend "s3" {
-    bucket         = "cs1u.mvp.demo.tfstate"
-    key            = "demo/s3.tfstate"
-    region         = "ap-northeast-2"
+    key            = "project/s3.tfstate"
     encrypt        = true
     acl            = "bucket-owner-full-control"
   }
