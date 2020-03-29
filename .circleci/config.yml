@@ -5,7 +5,7 @@ orbs:
 
 terraform: &terraform
   docker:
-    - image: mungi/terraform-aws-k8s:0.12.24
+    - image: mungi/terraform-aws-k8s
   working_directory: ~/project
 
 jobs:
