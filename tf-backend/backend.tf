@@ -1,12 +1,15 @@
+terraform {
+  backend "local" {}
+}
 provider "aws" {
   version = "~> 2.0"
-  region  = "ap-northeast-2"
-  profile = "cs1u"
+  region  = var.region
+  profile = var.profile
 }
 
 # DynamoDB : 요구사항은 LockID의 hash_key만 있으면 된다.
 resource "aws_dynamodb_table" "mvp_tfstate_lock" {
-  name = "cs1u_mvp_demo_tfstate_lock"
+  name = "cs1u_${var.project_name}_tfstate_lock"
   read_capacity = 5
   write_capacity = 5
   hash_key = "LockID"
@@ -20,7 +23,7 @@ resource "aws_dynamodb_table" "mvp_tfstate_lock" {
 
 # S3 : 특별한 요구사항은 없다, 저장만 가능하면 됨, 여기는 s3 자체의 엑세스 기록을 위해 log bucket을 추가한다.
 resource "aws_s3_bucket" "mvp_tfstate" {
-  bucket = "cs1u.mvp.demo.tfstate"
+  bucket = "cs1u.${var.project_name}.tfstate"
   acl    = "private"
   tags   = {
     Name = "Terraform"
@@ -42,6 +45,6 @@ resource "aws_s3_bucket" "mvp_tfstate" {
 
 # s3 log용 bucket 생성
 resource "aws_s3_bucket" "s3_logs" {
-  bucket = "cs1u.mvp.demo.logs"
+  bucket = "cs1u.${var.project_name}.logs"
   acl    = "log-delivery-write"
 }
