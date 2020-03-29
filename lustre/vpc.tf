@@ -18,26 +18,19 @@ module "vpc-mvp-jpn" {
   enable_dns_support     = true
 
   tags = {
-    "kubernetes.io/cluster/${local.eks_name}" = "shared",
     Terraform                                 = "true"
     Environment                               = "dev"
   }
 
   public_subnet_tags = {
-    "kubernetes.io/cluster/${local.eks_name}" = "shared"
-    "kubernetes.io/role/elb"                  = "1"
     "Tier"                                    = "public"
   }
 
   private_subnet_tags = {
-    "kubernetes.io/cluster/${local.eks_name}" = "shared"
-    "kubernetes.io/role/internal-elb"         = "1"
     "Tier"                                    = "private"
   }
 
   database_subnet_tags = {
-    "kubernetes.io/cluster/${local.eks_name}" = "shared"
-    "kubernetes.io/role/internal-elb"         = "1"
     "Tier"                                    = "database"
   }
 }

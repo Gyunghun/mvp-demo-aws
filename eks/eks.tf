@@ -74,12 +74,12 @@ module "mvp-eks" {
   vpc_id          = data.aws_vpc.mvp-eks.id
   subnets         = [for s in data.aws_subnet.mvp-eks : s.id]
 
-  write_kubeconfig = false
+  write_kubeconfig = true
 
   # Modify these to control cluster access
-  cluster_endpoint_private_access = "true"
-  cluster_endpoint_public_access  = "true"
-  cluster_endpoint_public_access_cidrs	= [ "0.0.0.0/0", ] #to limit access later
+  cluster_endpoint_private_access      = "true"
+  cluster_endpoint_public_access       = "true"
+  cluster_endpoint_public_access_cidrs = ["0.0.0.0/0", ] #to limit access later
 
   node_groups_defaults = {
     ami_type  = "AL2_x86_64"
@@ -130,11 +130,11 @@ data "aws_subnet" "mvp-eks-priv" {
 }
 
 provider "kubernetes" {
-  alias                  = "mvp-demo"
+  alias                  = "skcc-aws-demo"
   host                   = data.aws_eks_cluster.mvp-eks.endpoint
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.mvp-eks.certificate_authority.0.data)
   token                  = data.aws_eks_cluster_auth.mvp-eks.token
-  load_config_file       = false
-  version                = "~> 1.10"
-  # version                = "1.10"
+  load_config_file       = true
+  config_path            = "kubeconfig_${local.eks_name}"
+  version                = "~> 1.11"
 }

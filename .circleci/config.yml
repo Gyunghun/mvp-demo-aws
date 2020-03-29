@@ -25,7 +25,7 @@ terraform-run: &terraform-run
     - run:
         name: Run terraform at ${MODULE_DIR}
         command: |
-          cd ${MODULE_DIR}; pwd
+          cd ${MODULE_DIR}; pwd; env
           ../set_aws_configure.sh
           terraform init -input=false -backend-config="../project.tfvars"
           terraform plan  -var-file="../project.tfvars"
@@ -42,7 +42,7 @@ jobs:
             echo "Workflow Start!"
             echo $(pwd)
             ./set_aws_configure.sh
-            aws sts get-caller-identity profile cs1u
+            aws sts get-caller-identity --profile cs1u
 
   demo-vpc:
     environment:
@@ -61,12 +61,18 @@ jobs:
 
   demo-es:
     environment:
-      MODULE_DIR: es
+      MODULE_DIR: elasticsearch
+    <<: *terraform-run
+
+  demo-ec2:
+    environment:
+      MODULE_DIR: ec2
     <<: *terraform-run
 
   demo-eks:
     environment:
       MODULE_DIR: eks
+      KUBECONFIG: kubeconfig_skcc-aws-general
     <<: *terraform-run
 
   demo-telemetry:
@@ -115,6 +121,7 @@ workflows:
           type: approval
           requires:
             - build
+
       - demo-vpc:
           requires:
             - hold
@@ -124,6 +131,13 @@ workflows:
       - demo-efs:
           requires:
             - demo-vpc
+      - demo-ec2:
+          requires:
+            - demo-vpc
+      - demo-es:
+          requires:
+            - demo-vpc
+
       - demo-eks:
           requires:
             - demo-vpc      
@@ -133,12 +147,11 @@ workflows:
       - demo-apps:
           requires:
             - demo-telemetry
-      - demo-es:
-          requires:
-            - demo-vpc
+
       - demo-notify:
           requires:
             - demo-s3
             - demo-efs
+            - demo-ec2
             - demo-es
             - demo-apps

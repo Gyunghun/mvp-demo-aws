@@ -1,3 +1,22 @@
+#############################################################################
+# These values are placeholders. You should set and use the values of '../project.tfvars'
+variable "project_name" {
+  default = "mvp-demo"
+}
+
+variable "region" {
+  default = "ap-northeast-2"
+}
+
+variable "profile" {
+  default = "cs1u"
+}
+
+# just for compatability with s3 backend configuration file
+variable "bucket" { 
+}
+#############################################################################
+
 variable "map_accounts" {
   description = "Additional AWS account numbers to add to the aws-auth configmap."
   type        = list(string)
@@ -61,30 +80,14 @@ variable "map_users" {
   ]
 }
 
-variable "region" {
-  default = "ap-northeast-2"
-}
-
-variable "aws_profle_name" {
-  default = "cs1u"
-}
-
-variable "project_name" {
-  default = "mvp-demo"
-}
-
-variable "suffix" {
-  default = "tp2"
-}
-
 locals {
-  vpc_name = "${var.project_name}-${var.suffix}"
-  eks_name = "${var.project_name}-${var.suffix}"
+  vpc_name = "${var.project_name}"
+  eks_name = "${var.project_name}"
   ec2_keypair = var.project_name
 
   desired_capacity = 3
   max_capacity     = 10
   min_capacity     = 3
   instance_type    = "m5.2xlarge"
-  worker_disk_size = 200
+  worker_disk_size = 100
 }
