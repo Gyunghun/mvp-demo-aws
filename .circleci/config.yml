@@ -73,7 +73,20 @@ jobs:
     environment:
       MODULE_DIR: eks
       KUBECONFIG: kubeconfig_skcc-aws-general
-    <<: *terraform-run
+    docker:
+      - image: mungi/terraform-aws-k8s
+    working_directory: ~/project
+    steps:
+      - checkout
+      - run:
+          name: Run terraform at ${MODULE_DIR}
+          command: |
+            cd ${MODULE_DIR}; pwd; env
+            ../set_aws_configure.sh
+            aws eks update-kubeconfig --name skcc-aws-general --region ap-northeast-2 --profile cs1u
+            terraform init -input=false -backend-config="../project.tfvars"
+            terraform plan  -var-file="../project.tfvars"
+            terraform apply -var-file="../project.tfvars" -auto-approve
 
   demo-telemetry:
     <<: *tf-k8s

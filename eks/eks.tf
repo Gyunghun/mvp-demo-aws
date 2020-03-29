@@ -112,7 +112,6 @@ module "mvp-eks" {
     }
   }
 
-
   map_roles    = var.map_roles
   map_users    = var.map_users
   map_accounts = var.map_accounts
@@ -134,7 +133,7 @@ provider "kubernetes" {
   host                   = data.aws_eks_cluster.mvp-eks.endpoint
   cluster_ca_certificate = base64decode(data.aws_eks_cluster.mvp-eks.certificate_authority.0.data)
   token                  = data.aws_eks_cluster_auth.mvp-eks.token
-  load_config_file       = true
-  config_path            = "kubeconfig_${local.eks_name}"
+  # load_config_file       = true
+  # config_path            = "kubeconfig_${local.eks_name}"
   version                = "~> 1.11"
 }
