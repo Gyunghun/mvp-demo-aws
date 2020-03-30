@@ -1,3 +1,5 @@
+[![CircleCI](https://circleci.com/gh/cs1u/mvp-demo-aws.svg?style=svg)](https://circleci.com/gh/cs1u/mvp-demo-aws)
+
 # 개요
 Cloud Platform MVP demo 환경을 위한 인프라 코드 저장소 입니다.
 
